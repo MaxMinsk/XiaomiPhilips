@@ -23,6 +23,7 @@
     },
     "error": {
       "invalid_token": "Enter exactly 32 hexadecimal characters, without the b prefix or quotes.",
+      "placeholder_token": "That is a handshake marker, not a token. A lamp answers all f once it is provisioned and refuses to hand its token over, and all zeros while it is in setup mode. The real token is needed.",
       "invalid_host": "Enter an IP address or hostname without https:// or a path.",
       "cannot_connect": "Cannot connect: {reason} Check Settings > System > Logs for philips_eyecare, and download diagnostics for the full probe.",
       "unsupported_model": "Only philips.light.sread2 is supported in this version; the lamp {reason}.",

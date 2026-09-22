@@ -42,7 +42,7 @@ async def test_real_ha_setup_creates_device_and_two_lights(tmp_path):
             result = await hass.config_entries.flow.async_init(
                 "philips_eyecare",
                 context={"source": config_entries.SOURCE_USER},
-                data={"host": "192.0.2.10", "token": "0" * 32, "name": "Desk lamp"},
+                data={"host": "192.0.2.10", "token": "0123456789abcdef" * 2, "name": "Desk lamp"},
             )
             await hass.async_block_till_done()
             assert result["type"] == "create_entry"

@@ -21,6 +21,8 @@ from .const import DOMAIN, NAME
 
 _LOGGER = logging.getLogger(__name__)
 
+PLACEHOLDER_TOKENS = {"f" * 32, "0" * 32}
+
 
 class EyeCareConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
@@ -46,6 +48,10 @@ class EyeCareConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data[CONF_TOKEN] = token.lower()
             if not re.fullmatch(r"[0-9a-fA-F]{32}", token):
                 errors[CONF_TOKEN] = "invalid_token"
+            elif data[CONF_TOKEN] in PLACEHOLDER_TOKENS:
+                # A handshake answers ff..ff for a provisioned lamp and 00..00 in setup
+                # mode; both are markers, and people paste them as if they were tokens.
+                errors[CONF_TOKEN] = "placeholder_token"
             elif not data[CONF_HOST] or "://" in data[CONF_HOST] or "/" in data[CONF_HOST]:
                 errors[CONF_HOST] = "invalid_host"
             else:

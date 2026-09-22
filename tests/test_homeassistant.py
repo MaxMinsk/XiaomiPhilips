@@ -44,6 +44,15 @@ async def test_invalid_token_does_not_touch_network():
     flow.hass.async_add_executor_job.assert_not_called()
 
 
+@pytest.mark.parametrize("token", ["f" * 32, "F" * 32, "0" * 32])
+async def test_handshake_marker_is_not_accepted_as_a_token(token):
+    """A provisioned lamp answers ff..ff, and that is a refusal, not a token."""
+    flow = flow_with_result()
+    result = await flow.async_step_user({**INPUT, "token": token})
+    assert result["errors"] == {"token": "placeholder_token"}
+    flow.hass.async_add_executor_job.assert_not_called()
+
+
 async def test_unreachable_device_keeps_form_open_without_leaking_secret():
     flow = flow_with_result()
     flow.hass.async_add_executor_job.side_effect = DeviceException(INPUT["token"])
