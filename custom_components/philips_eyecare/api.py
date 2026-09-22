@@ -27,6 +27,7 @@ STATUS_PROPERTIES = (
 )
 
 NO_HANDSHAKE = "no_handshake"
+NO_REPLY = "no_reply"
 TOKEN_REJECTED = "token_rejected"
 DEVICE_ERROR = "device_error"
 NETWORK_ERROR = "network_error"
@@ -37,11 +38,17 @@ ERROR_HINTS = {
     NO_HANDSHAKE: (
         "No answer to the miIO handshake on UDP 54321. The lamp is either unreachable "
         "from the Home Assistant host (VLAN, guest network, client isolation, Docker "
-        "bridge networking) or busy talking to another client."
+        "bridge networking) or the address now belongs to something else."
+    ),
+    NO_REPLY: (
+        "The lamp completed the handshake and then ignored the command, so it is "
+        "reachable but refuses to talk. A lamp that greets you and then stays silent "
+        "is nearly always rejecting the token: read the token again after the most "
+        "recent reset or re-pairing. Less often another client holds the session."
     ),
     TOKEN_REJECTED: (
-        "The lamp answered but the reply could not be decrypted. The token is wrong or "
-        "stale; re-read it after the last reset or re-pairing."
+        "The lamp answered but the reply could not be decrypted, which python-miio "
+        "reports as a checksum error. The token is wrong or stale."
     ),
     DEVICE_ERROR: "The lamp answered with an error to a command it did not accept.",
     NETWORK_ERROR: "The socket to the lamp failed before a reply arrived.",
@@ -50,18 +57,36 @@ ERROR_HINTS = {
 }
 
 
+def error_chain(err: BaseException) -> list[BaseException]:
+    """Walk the chain, since python-miio reports a timeout as a plain DeviceException."""
+    chain: list[BaseException] = []
+    seen: set[int] = set()
+    current: BaseException | None = err
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        chain.append(current)
+        current = current.__cause__ or current.__context__
+    return chain
+
+
 def describe_error(err: BaseException) -> str:
     """Classify a miIO failure into a cause that is worth showing to a user."""
-    text = str(err).lower()
-    if isinstance(err, PayloadDecodeException):
+    chain = error_chain(err)
+    text = " ".join(str(item).lower() for item in chain)
+    if any(isinstance(item, PayloadDecodeException) for item in chain):
         return BAD_PAYLOAD
-    if "checksum" in text or "decrypt" in text or "token" in text:
+    if "checksum" in text or "decrypt" in text or "invalid token" in text:
         return TOKEN_REJECTED
-    if isinstance(err, TimeoutError) or "timeout" in text or "unable to discover" in text:
+    if "unable to discover" in text:
         return NO_HANDSHAKE
-    if isinstance(err, DeviceError):
+    # "No response from the device" is only raised after a handshake already succeeded.
+    if "no response from the device" in text or "unable to recover" in text:
+        return NO_REPLY
+    if any(isinstance(item, DeviceError) for item in chain):
         return DEVICE_ERROR
-    if isinstance(err, OSError):
+    if any(isinstance(item, TimeoutError) for item in chain) or "timed out" in text:
+        return NO_HANDSHAKE
+    if any(isinstance(item, OSError) for item in chain):
         return NETWORK_ERROR
     return UNKNOWN_ERROR
 

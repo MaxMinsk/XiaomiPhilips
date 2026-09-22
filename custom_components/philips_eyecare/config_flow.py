@@ -9,7 +9,14 @@ from homeassistant.const import CONF_HOST, CONF_MODEL, CONF_NAME, CONF_TOKEN
 from homeassistant.helpers import selector
 from miio import DeviceException
 
-from .api import ERROR_HINTS, InvalidResponse, LampApi, UnsupportedModel, describe_error
+from .api import (
+    ERROR_HINTS,
+    InvalidResponse,
+    LampApi,
+    UnsupportedModel,
+    describe_error,
+    error_chain,
+)
 from .const import DOMAIN, NAME
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,10 +63,12 @@ class EyeCareConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     cause = describe_error(err)
                     errors["base"] = "cannot_connect"
                     reason = ERROR_HINTS[cause]
+                    # Name the exception chain: an unclassified cause is useless alone.
                     _LOGGER.warning(
-                        "Cannot reach the lamp at %s: %s. %s",
+                        "Cannot reach the lamp at %s: %s (%s). %s",
                         data[CONF_HOST],
                         cause,
+                        " <- ".join(type(item).__name__ for item in error_chain(err)),
                         ERROR_HINTS[cause],
                     )
                     # A probe walks every property with its own timeout, so it can stall

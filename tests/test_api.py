@@ -8,7 +8,44 @@ from unittest.mock import Mock
 import pytest
 from miio import DeviceException
 
-from custom_components.philips_eyecare.api import InvalidResponse, LampApi, UnsupportedModel
+from custom_components.philips_eyecare.api import (
+    InvalidResponse,
+    LampApi,
+    UnsupportedModel,
+    describe_error,
+)
+
+
+def raised_by_miio(message, cause=None):
+    """Rebuild what python-miio raises, including the exception it chains from."""
+    try:
+        if cause is None:
+            raise DeviceException(message)
+        try:
+            raise cause
+        except type(cause) as inner:
+            raise DeviceException(message) from inner
+    except DeviceException as err:
+        return err
+
+
+@pytest.mark.parametrize(
+    "error,expected",
+    [
+        (raised_by_miio("Unable to discover the device 192.0.2.10"), "no_handshake"),
+        # A silent lamp reports "timed out", which never spells the word timeout.
+        (raised_by_miio("No response from the device", TimeoutError("timed out")), "no_reply"),
+        (raised_by_miio("Unable to recover failed command"), "no_reply"),
+        (
+            raised_by_miio("Got checksum error which indicates use of an invalid token."),
+            "token_rejected",
+        ),
+        (TimeoutError("timed out"), "no_handshake"),
+        (OSError("network is unreachable"), "network_error"),
+    ],
+)
+def test_every_documented_failure_is_classified(error, expected):
+    assert describe_error(error) == expected
 
 
 @pytest.fixture
