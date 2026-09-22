@@ -3,7 +3,7 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from miio import DeviceException
@@ -110,6 +110,23 @@ def test_identity_and_wrong_model(api):
     api._device.info.return_value.model = "yeelink.light.color1"
     with pytest.raises(UnsupportedModel):
         api.info()
+
+
+def test_lamp_that_ignores_info_is_still_usable(api):
+    """A firmware may answer get_prop and never answer miIO.info."""
+    api._device.info = Mock(side_effect=raised_by_miio("No response from the device"))
+    api._device.get_properties = Mock(return_value=["on", 50, "off", "off", 25, "on", 1, "off", 0])
+    with patch.object(type(api._device), "device_id", property(lambda self: 0x1A2B3C4D)):
+        info = api.validate()
+    assert info.identified_by == "handshake"
+    assert info.mac == "did00001a2b3c4d"
+
+
+def test_a_lamp_that_answers_nothing_still_fails(api):
+    api._device.info = Mock(side_effect=raised_by_miio("No response from the device"))
+    api._device.get_properties = Mock(side_effect=raised_by_miio("No response from the device"))
+    with pytest.raises(DeviceException):
+        api.validate()
 
 
 def test_command_sequences_do_not_interleave(api):

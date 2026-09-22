@@ -112,6 +112,7 @@ class LampInfo:
     model: str
     mac: str
     firmware: str | None
+    identified_by: str = "info"
 
 
 @dataclass(frozen=True)
@@ -235,10 +236,28 @@ class LampApi:
                 round(status.ambient_brightness),
             )
 
+    def _identity_from_handshake(self) -> LampInfo:
+        """Identify a lamp by its handshake id, which costs no miIO command."""
+        return LampInfo(
+            next(iter(SUPPORTED_MODELS)), f"did{self._device.device_id:012x}", None, "handshake"
+        )
+
     def validate(self) -> LampInfo:
         """Check identity and light properties before saving a configuration."""
         with self._lock:
-            info = self.info()
+            try:
+                info = self.info()
+            except (DeviceException, OSError) as err:
+                if describe_error(err) not in (NO_REPLY, UNKNOWN_ERROR):
+                    raise
+                # Some firmwares never answer miIO.info while serving get_prop fine.
+                # Reading the light is the check that matters, so let that decide.
+                _LOGGER.warning(
+                    "Lamp at %s ignored miIO.info; identifying it by its handshake id instead",
+                    self._host,
+                )
+                self.status()
+                return self._identity_from_handshake()
             self.status()
             return info
 
