@@ -1,0 +1,12 @@
+{
+  "domain": "philips_eyecare",
+  "name": "Xiaomi Philips EyeCare",
+  "codeowners": ["@MaxMinsk"],
+  "config_flow": true,
+  "documentation": "https://github.com/MaxMinsk/XiaomiPhilips",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/MaxMinsk/XiaomiPhilips/issues",
+  "requirements": ["python-miio==0.5.12"],
+  "version": "0.1.0"
+}

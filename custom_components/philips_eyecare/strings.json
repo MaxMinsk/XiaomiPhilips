@@ -1,0 +1,47 @@
+{
+  "title": "Xiaomi Philips EyeCare",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your lamp",
+        "description": "Local connection to philips.light.sread2. Enter its home-network IP address and 32-character miIO token. No Xiaomi account is needed.",
+        "data": {
+          "host": "IP address or hostname",
+          "token": "miIO token",
+          "name": "Lamp name"
+        }
+      },
+      "reconfigure": {
+        "title": "Change connection settings",
+        "description": "Enter the new IP address. Leave the token blank to keep the saved token. The address must belong to the same lamp.",
+        "data": {
+          "host": "IP address or hostname",
+          "token": "New miIO token (optional)",
+          "name": "Lamp name"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Enter exactly 32 hexadecimal characters, without the b prefix or quotes.",
+      "invalid_host": "Enter an IP address or hostname without https:// or a path.",
+      "cannot_connect": "Cannot connect. Check the IP address, token and local network. A timeout can also mean an incorrect token.",
+      "unsupported_model": "Only philips.light.sread2 is supported in this version.",
+      "invalid_response": "The lamp returned incomplete or unexpected properties.",
+      "wrong_device": "This address belongs to a different lamp. Add it as a new integration."
+    },
+    "abort": {
+      "already_configured": "This lamp is already configured.",
+      "reconfigure_successful": "Connection settings updated."
+    }
+  },
+  "entity": {
+    "light": {
+      "main": {
+        "name": "Main light"
+      },
+      "ambient": {
+        "name": "Ambient light"
+      }
+    }
+  }
+}
