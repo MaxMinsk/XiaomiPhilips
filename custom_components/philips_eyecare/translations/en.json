@@ -24,9 +24,9 @@
     "error": {
       "invalid_token": "Enter exactly 32 hexadecimal characters, without the b prefix or quotes.",
       "invalid_host": "Enter an IP address or hostname without https:// or a path.",
-      "cannot_connect": "Cannot connect. Check the IP address, token and local network. A timeout can also mean an incorrect token.",
-      "unsupported_model": "Only philips.light.sread2 is supported in this version.",
-      "invalid_response": "The lamp returned incomplete or unexpected properties.",
+      "cannot_connect": "Cannot connect: {reason} Check Settings > System > Logs for philips_eyecare, and download diagnostics for the full probe.",
+      "unsupported_model": "Only philips.light.sread2 is supported in this version; the lamp {reason}.",
+      "invalid_response": "The lamp returned incomplete or unexpected properties: {reason}. Diagnostics contain every property the lamp answered.",
       "wrong_device": "This address belongs to a different lamp. Add it as a new integration."
     },
     "abort": {

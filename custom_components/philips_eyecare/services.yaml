@@ -1,0 +1,8 @@
+probe:
+  fields:
+    entry_id:
+      required: false
+      example: 01J9ZQ6M0X8N2F3K4T5V6W7Y8Z
+      selector:
+        config_entry:
+          integration: philips_eyecare
