@@ -128,11 +128,37 @@ def probe_with_miio(host: str, token: str) -> None:
             print(f"    {name:<13} FAILED: {type(err).__name__}: {err}")
 
 
+def join_wifi(host: str, token: str, ssid: str, password: str) -> int:
+    """Move the lamp onto a WiFi network while it still serves its own access point."""
+    try:
+        from miio import Device, DeviceException
+    except ImportError:
+        print("python-miio is not installed; run: pip install python-miio==0.5.12")
+        return 1
+
+    hr(f"sending the lamp to {ssid!r}")
+    print(f"  Write this token down now; a provisioned lamp will not repeat it: {token}")
+    try:
+        print(f"  reply: {Device(host, token, timeout=5).configure_wifi(ssid, password)!r}")
+    except DeviceException as err:
+        print(f"  FAILED: {type(err).__name__}: {err}")
+        return 1
+    print("  The lamp now leaves its access point and joins the network.")
+    print("  Find its new address, then re-run this script against it with the same token.")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("host", nargs="?", help="lamp IP address")
     parser.add_argument("token", nargs="?", help="32-character miIO token")
     parser.add_argument("--scan", metavar="CIDR", help="find miIO devices on a subnet")
+    parser.add_argument(
+        "--join-wifi",
+        nargs=2,
+        metavar=("SSID", "PASSWORD"),
+        help="send the lamp to a WiFi network; run it from the lamp's own access point",
+    )
     args = parser.parse_args()
 
     if args.scan:
@@ -166,6 +192,13 @@ def main() -> int:
     if len(token) != 32 or any(c not in "0123456789abcdef" for c in token):
         print(f"\nThe token must be 32 hex characters; got {len(token)}.")
         return 1
+    if token in ("f" * 32, "0" * 32):
+        print("\nThat is a handshake marker, not a token. Only a lamp in setup mode hands")
+        print("its token over; a provisioned lamp answers all f to say it will not.")
+        return 1
+
+    if args.join_wifi:
+        return join_wifi(args.host, token, *args.join_wifi)
 
     probe_with_miio(args.host, token)
     return 0
