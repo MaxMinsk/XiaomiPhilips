@@ -15,7 +15,7 @@ async def async_get_config_entry_diagnostics(hass, entry):
     # device_id identifies the lamp; drop it before the report leaves the house.
     probe.get("steps", {}).get("handshake", {}).pop("device_id", None)
     return {
-        "integration_version": "0.1.0",
+        "integration_version": "0.1.1",
         "model": entry.data.get("model"),
         "firmware": entry.data.get("firmware"),
         "entry_state": str(entry.state),
